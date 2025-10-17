@@ -2,86 +2,111 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>포토 모자이크 프로젝트</title>
+<title>Photo Mosaic</title>
 <style>
-  :root { --maxw: 1200px; }
-  html,body{margin:0;padding:0}
-  body{font:15px/1.65 system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;color:#111;background:#fafafa}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:20px}
-  .hero,.card{background:#fff;border:1px solid #e6e6e6;border-radius:12px;padding:16px}
-  .mosaic img{width:100%;height:auto;display:block;border-radius:8px}
-  .meta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:12px}
-  .badge{padding:6px 10px;border-radius:999px;background:#111;color:#fff;font-weight:600;font-size:14px}
-  .btn{appearance:none;border:1px solid #ddd;background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+  :root{--maxw:1200px}
+  html,body{margin:0;padding:0;background:#fafafa;color:#111;font:15px/1.65 system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:24px}
+  /* 모자이크 */
+  .mosaic{display:flex;justify-content:center}
+  .mosaic img{width:100%;height:auto;max-width:1200px;display:block;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  /* 카운터(그림 밖 중앙) */
+  .counter{margin:14px auto 26px;display:flex;gap:12px;align-items:center;justify-content:center}
+  .chip{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:999px;background:#111;color:#fff;font-weight:700}
+  .digits{display:inline-flex;gap:6px}
+  .digits span{display:inline-block;min-width:22px;padding:6px 8px;border-radius:6px;background:#fff;color:#111;border:1px solid #e6e6e6;text-align:center;font-weight:800}
+  .sep{opacity:.6}
+  /* 섹션 레이아웃 */
+  .section{background:#fff;border:1px solid #e9e9e9;border-radius:12px;padding:18px;margin:0 auto 18px;max-width:860px}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  /* 업로드 */
+  .upload-box{width:100%;max-width:640px}
+  iframe{border:0;width:100%;height:240px;border-radius:10px;background:#f3f3f3}
+  .btn{appearance:none;border:1px solid #ddd;background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
   .btn:hover{border-color:#aaa}
-  .grid{display:grid;grid-template-columns:1fr;gap:20px;margin-top:24px}
-  @media (min-width: 980px){ .grid{grid-template-columns: 1.2fr 0.8fr;} }
-  iframe{border:0;width:100%}
-  footer{color:#666;text-align:center;padding:16px 0 28px}
+  /* 공유 */
+  .share{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .share a,.share button{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;text-decoration:none;color:#111;cursor:pointer}
+  .share a:hover,.share button:hover{border-color:#aaa}
+  footer{color:#777;text-align:center;padding:18px 0 30px}
 </style>
 </head>
 <body>
-  <header class="wrap">
-    <h1 style="margin:12px 0 16px;font-size:22px">포토 모자이크 프로젝트</h1>
-    <p style="margin:0;color:#555">아래 이미지는 참가자 사진 1,000장을 타일로 합성한 모자이크입니다.</p>
-  </header>
-
   <main class="wrap">
-    <section class="hero">
-      <div class="mosaic">
-        <!-- 코랩 결과 파일명 유지 -->
-        <img id="mosaicImg" src="mosaic_large.jpg" alt="포토 모자이크">
+    <!-- 1) 모자이크 이미지 -->
+    <div class="mosaic">
+      <img id="mosaicImg" src="mosaic_large.jpg" alt="포토 모자이크">
+    </div>
+
+    <!-- 2) 참여자 수 / 목표  → 그림 밖 중앙 카운터 -->
+    <div id="counter" class="counter" hidden>
+      <div class="chip">👥 참여자</div>
+      <div class="digits" id="curDigits"></div>
+      <div class="chip sep">🎯 목표</div>
+      <div class="digits" id="tarDigits"></div>
+    </div>
+
+    <!-- 3) 이미지 새로고침(원하면 유지, 필요 없으면 주석 처리) -->
+    <div class="center" style="margin-bottom:20px;">
+      <button class="btn" id="refreshBtn">🔄 이미지 새로고침</button>
+    </div>
+
+    <!-- 4) 업로드(가운데 정렬 + 버튼) -->
+    <section class="section center">
+      <div style="font-weight:700;margin-bottom:8px;">📤 이미지 업로드</div>
+      <div class="upload-box">
+        <iframe id="uploadFrame" src="" loading="lazy" title="이미지 업로드 폼"></iframe>
       </div>
-      <div class="meta">
-        <div id="countBadge" class="badge">집계 중...</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn" id="refreshBtn">이미지 새로고침</button>
-          <small style="color:#777">코랩에서 재합성 후 즉시 반영하려면 클릭</small>
-        </div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <a class="btn" id="openPopup" target="_blank" rel="noopener">새 창에서 업로드 열기</a>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card">
-        <h2 style="margin:0 0 8px;font-size:18px">이미지 업로드</h2>
-        <p style="margin:0 0 8px;color:#555">사진을 업로드하면 운영 폴더(구글 드라이브)에 저장됩니다.</p>
-        <iframe id="uploadFrame" src="" height="240" loading="lazy"></iframe>
-      </div>
-      <div class="card">
-        <h2 style="margin:0 0 8px;font-size:18px">공유</h2>
-        <div>
-          <a class="btn" target="_blank" rel="noopener"
-             href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fsamkorea.github.io%2F2026_lent40days%2F">Facebook</a>
-          <a class="btn" target="_blank" rel="noopener"
-             href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fsamkorea.github.io%2F2026_lent40days%2F&text=%ED%8F%AC%ED%86%A0%20%EB%AA%A8%EC%9E%90%EC%9D%B4%ED%81%AC">X</a>
-          <button class="btn" id="copyBtn">링크 복사</button>
-        </div>
+    <!-- 5) 공유(가운데 정렬 + 이모지) -->
+    <section class="section center">
+      <div style="font-weight:700;margin-bottom:8px;">📣 공유하기</div>
+      <div class="share">
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fsamkorea.github.io%2F2026_lent40days%2F" target="_blank" rel="noopener">👍 Facebook</a>
+        <a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fsamkorea.github.io%2F2026_lent40days%2F&text=%ED%8F%AC%ED%86%A0%20%EB%AA%A8%EC%9E%90%EC%9D%B4%ED%81%AC" target="_blank" rel="noopener">🐦 X</a>
+        <button id="copyBtn">🔗 링크 복사</button>
       </div>
     </section>
   </main>
 
-  <footer><div class="wrap">© 2026 포토 모자이크 프로젝트</div></footer>
+  <footer>© 2026</footer>
 
 <script>
-  // === 이 줄만 본인 Web App URL로 교체 ===
+  /* === GAS URL만 본인 Web App URL로 교체 === */
   const GAS_URL = 'https://script.google.com/a/macros/samcare.org/s/AKfycbzbPDu7oVNuE-pI0gUI3SeUx3BYZg9Z7UBB67WBaMhlkHma3v0vfqcF23l7wR5EILVbjw/exec';
 
-  // 업로드 폼
-  document.getElementById('uploadFrame').src = GAS_URL;
+  // 업로드 폼 & 새창 버튼
+  const uploadFrame = document.getElementById('uploadFrame');
+  uploadFrame.src = GAS_URL;
+  document.getElementById('openPopup').href = GAS_URL;
 
-  // 참여자 수 배지
-  const countBadge = document.getElementById('countBadge');
-  function fetchCount(){
-    fetch(GAS_URL + '?mode=count', {cache:'no-store'})
-      .then(r=>r.json())
-      .then(d=>{
-        const cur=(d.current||0).toLocaleString();
-        const tar=(d.target||1000).toLocaleString();
-        countBadge.textContent = `현재 ${cur} / 목표 ${tar}`;
-      })
-      .catch(()=>{ countBadge.textContent='집계 불가'; });
+  // 참여자 수 표시
+  const counterEl = document.getElementById('counter');
+  const curDigits = document.getElementById('curDigits');
+  const tarDigits = document.getElementById('tarDigits');
+
+  function toDigits(n){
+    const s = (n||0).toLocaleString('ko-KR'); // 1,000 → 콤마 유지
+    return s.split('').map(ch=>{
+      const span=document.createElement('span');
+      span.textContent=ch;
+      if(ch===','){ span.style.minWidth='10px'; span.style.padding='6px 4px'; span.style.opacity='.6'; }
+      return span;
+    });
   }
-  fetchCount();
+  function renderCount(cur, tar){
+    curDigits.replaceChildren(...toDigits(cur));
+    tarDigits.replaceChildren(...toDigits(tar));
+    counterEl.hidden = false;
+  }
+  fetch(GAS_URL + '?mode=count', {cache:'no-store'})
+    .then(r=>r.json())
+    .then(d=>renderCount(d.current||0, d.target||1000))
+    .catch(()=>{ /* 집계불가 문구는 표시하지 않음(요청사항) */ });
 
   // 이미지 캐시 무효화
   document.getElementById('refreshBtn').addEventListener('click', ()=>{
@@ -92,9 +117,8 @@
   document.getElementById('copyBtn').addEventListener('click', async ()=>{
     await navigator.clipboard.writeText(location.href);
     const btn = document.getElementById('copyBtn');
-    const prev = btn.textContent; btn.textContent='복사됨!'; setTimeout(()=>btn.textContent=prev,1200);
+    const prev = btn.textContent; btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent=prev,1200);
   });
 </script>
 </body>
 </html>
-
